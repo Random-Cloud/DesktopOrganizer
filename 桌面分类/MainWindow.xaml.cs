@@ -27,6 +27,38 @@ namespace DesktopOrganizer {
             StateManager.Initialize();
             StateManager.LoadConfig();
 
+            // 新增功能：删除过期备忘录
+            try {
+                var allNotes = StateManager.CurrentConfig.CalendarNotes;
+                List<string> expiredKeys = new List<string>();
+                DateTime currentMonth = DateTime.Today;
+
+                // 1. 遍历检查所有记录
+                foreach (var key in allNotes.Keys) {
+                    // 尝试解析日期 (Key 格式通常为 "yyyy-MM-dd")
+                    if (DateTime.TryParse(key, out DateTime noteDate)) {
+                        // 如果 年份不同 或 月份不同，则标记为过期
+                        if (noteDate.Year != currentMonth.Year || noteDate.Month != currentMonth.Month) {
+                            expiredKeys.Add(key);
+                        }
+                    }
+                }
+
+                // 2. 执行删除并保存
+                if (expiredKeys.Count > 0) {
+                    foreach (var key in expiredKeys) {
+                        allNotes.Remove(key);
+                    }
+                    // 立即保存清理后的结果到硬盘
+                    StateManager.SaveConfig();
+
+                }
+            }
+            catch (Exception ex) {
+                // 防止清理逻辑出错影响软件启动，仅记录错误或忽略
+                System.Diagnostics.Debug.WriteLine("清理过期记录失败: " + ex.Message);
+            }
+
             // 2. 恢复主窗口状态
             this.Left = StateManager.CurrentConfig.MainX;
             this.Top = StateManager.CurrentConfig.MainY;
@@ -406,7 +438,52 @@ namespace DesktopOrganizer {
             catch { }
         }
 
-        // 后台运行
+        // 折叠
+        private double _lastHeight = 320; // 记录折叠前的高度
+        private bool _isFolded = false;   // 记录当前是否折叠
+        private double _oldMinHeight = 0; // 记录折叠前的最小高度
+
+        private void ToggleFold_Click(object sender, RoutedEventArgs e) {
+            if (!_isFolded) {
+                // --- 执行折叠 ---
+
+                // 1. 记录当前高度以便恢复
+                _lastHeight = this.Height;
+                _oldMinHeight = this.MinHeight;
+                this.MinHeight = 0;
+
+                // 2. 隐藏内容行 (设置高度为 0)
+                MainContentRow.Height = new GridLength(0);
+
+                // 3. 将窗口高度设为标题栏高度 + 边框微调
+                this.Height = 45;
+
+                // 4. 更改按钮图标
+                FoldBtn.Content = "▲";
+
+                // 5. 锁定改变大小 (折叠时禁止调整大小)
+                this.ResizeMode = ResizeMode.NoResize;
+
+                _isFolded = true;
+            }
+            else {
+                // --- 执行展开 ---
+
+                // 1. 恢复内容行 (设置为 *)
+                MainContentRow.Height = new GridLength(1, GridUnitType.Star);
+
+                // 2. 恢复窗口高度
+                this.Height = _lastHeight;
+
+                // 3. 更改按钮图标
+                FoldBtn.Content = "▼";
+
+                // 4. 恢复调整大小功能
+                this.ResizeMode = ResizeMode.CanResizeWithGrip;
+
+                _isFolded = false;
+            }
+        }
 
     }
 }

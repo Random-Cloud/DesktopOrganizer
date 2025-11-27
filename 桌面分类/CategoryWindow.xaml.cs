@@ -55,9 +55,7 @@ namespace DesktopOrganizer {
                 this.Width = Data.Width;
             if (Data.Height > 0)
                 this.Height = Data.Height;
-
-            // 如果你的 XAML 中有 TitleBox 用于显示标题，请解开下行注释
-            TitleBox.Text = Data.Title; 
+            // TitleBox.Text = Data.Title; 
             
 
             // 3. 加载图标内容
@@ -298,6 +296,50 @@ namespace DesktopOrganizer {
 
             // 3. 关闭自身
             this.Close();
+        }
+
+        private double _lastExpandedHeight = 300; // 默认高度
+        private bool _isFolded = false;
+
+        private void ToggleFold_Click(object sender, RoutedEventArgs e) {
+            if (!_isFolded) {
+                // --- 折叠 ---
+                _lastExpandedHeight = this.Height; // 记住当前高度
+
+                ContentRow.Height = new GridLength(0); // 隐藏内容行
+                this.Height = 42; // 只保留标题栏高度
+
+                CatFoldBtn.Content = "▲";
+                this.ResizeMode = ResizeMode.NoResize; // 锁死大小
+                _isFolded = true;
+            }
+            else {
+                // --- 展开 ---
+                ContentRow.Height = new GridLength(1, GridUnitType.Star);
+                this.Height = _lastExpandedHeight; // 恢复高度
+
+                CatFoldBtn.Content = "▼";
+                this.ResizeMode = ResizeMode.CanResizeWithGrip;
+                _isFolded = false;
+            }
+
+            // 可以在这里调用 StateManager.SaveConfig() 如果您希望记录折叠状态
+            // 但通常只记录展开时的高度比较安全，避免下次打开变成 40px 高
+            if (!_isFolded) {
+                Data.Height = this.Height; // 更新数据模型中的高度
+                StateManager.SaveConfig();
+            }
+        }
+
+        
+        protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo) {
+            base.OnRenderSizeChanged(sizeInfo);
+            // 只有在【非折叠】状态下才保存高度
+            if (!_isFolded && Data != null) {
+                Data.Width = this.Width;
+                Data.Height = this.Height;
+                // 建议：加一个防抖动或者在关闭时统一保存，不要频繁调 IO
+            }
         }
     }
 }

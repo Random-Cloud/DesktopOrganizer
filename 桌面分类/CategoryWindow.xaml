@@ -6,6 +6,7 @@
         AllowsTransparency="True"
         Background="Transparent"
         ResizeMode="CanResizeWithGrip"
+        ShowInTaskbar="False"
         MouseLeftButtonDown="Window_MouseLeftButtonDown">
 
     <!-- 1. 在这里补充定义 MenuBtnStyle，防止报错 -->
@@ -35,34 +36,41 @@
     </Window.Resources>
 
     <!-- 2. 窗口主体 -->
-    <!-- WindowBodyStyle 来自 App.xaml，应该已经定义好了 -->
     <Border Style="{StaticResource WindowBodyStyle}">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="40"/>
-                <RowDefinition Height="*"/>
+                <RowDefinition x:Name="ContentRow" Height="*"/>
             </Grid.RowDefinitions>
 
-            <!-- 标题 (可输入修改) -->
-            <!-- 这里用 TextBox 允许用户改名，你也可以绑定 Data.Title -->
-            <TextBox Text="{Binding Title, Mode=TwoWay}" 
-                     x:Name="TitleBox"
-                     Background="Transparent" 
-                     Foreground="White" 
-                     BorderThickness="0" 
-                     VerticalAlignment="Center" 
-                     Margin="15,0,100,0" 
-                     FontSize="14"
-                     FontWeight="Bold"/>
+            
+            <Grid Grid.Row="0">
+                <!-- 标题 (可输入修改) -->
+                <TextBlock Text="{Binding Title}" 
+                           VerticalAlignment="Center" 
+                           Margin="10,0,0,0" 
+                           FontWeight="Bold" 
+                           Foreground="White"/>
 
-            <!-- 右上角菜单按钮 -->
-            <Button HorizontalAlignment="Right" Width="30" Height="30" 
-                    Background="Transparent" BorderThickness="0" Foreground="White" 
-                    Click="Menu_Click" Cursor="Hand">
-                <TextBlock Text="⋮" FontSize="20" FontWeight="Bold" VerticalAlignment="Center" HorizontalAlignment="Center"/>
-            </Button>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,5,0">
+                    <!--折叠/展开-->
+                    <Button x:Name="CatFoldBtn" 
+                            Content="▼" 
+                            Click="ToggleFold_Click"
+                            Width="30" Height="30" Margin="0,0,5,0"
+                            ToolTip="折叠/展开"
+                            Style="{StaticResource MenuBtnStyle}"
+                            FontSize="12" FontWeight="Bold"/>
 
-            <!-- 菜单弹出框 (命名为 CatMenu，与后台代码对应) -->
+                    <Button Content="⋮" 
+                            Click="Menu_Click" 
+                            Width="30" Height="30"
+                            Style="{StaticResource MenuBtnStyle}"
+                            FontSize="16" FontWeight="Bold"/>
+                </StackPanel>
+            </Grid>
+
+            <!-- 菜单弹出框  -->
             <Popup x:Name="CatMenu" Placement="Bottom" HorizontalOffset="-100" VerticalOffset="10" 
                    StaysOpen="False" AllowsTransparency="True">
                 <Border Background="#2D2D30" BorderBrush="#555" BorderThickness="1" CornerRadius="5" Padding="5">
